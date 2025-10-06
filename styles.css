@@ -39,6 +39,10 @@ button:hover {
     border-radius: 5px;
     cursor: move;
     transition: background-color 0.3s;
+    /* Improve mobile touch handling */
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 #dropArea {
