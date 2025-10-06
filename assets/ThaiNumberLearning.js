@@ -7,6 +7,7 @@ export class ThaiNumberLearning {
         this.currentNumber = available[Math.floor(Math.random() * available.length)];
 
         this.setupFeedbackElement();
+        this.ensureNextButtonElement();
         this.updateUI();
     }
 
@@ -31,6 +32,9 @@ export class ThaiNumberLearning {
 
         // Populate letters area with correct tiles + extras
         this.populateLettersArea(true);
+
+        // Hide next button as we're in an active round
+        this.hideNextButton();
     }
 
     playAudio(audioId) {
@@ -185,6 +189,44 @@ export class ThaiNumberLearning {
         });
     }
 
+    ensureNextButtonElement() {
+        // Create a Next button that is hidden by default and inserted after the #dropArea element (second row)
+        let btn = document.getElementById('nextRoundBtn');
+        if (!btn) {
+            btn = document.createElement('button');
+            btn.id = 'nextRoundBtn';
+            btn.textContent = 'Next round';
+            btn.style.display = 'none';
+            // Basic spacing/style so it flows nicely after the second row
+            btn.style.marginTop = '12px';
+            btn.style.padding = '8px 12px';
+            btn.addEventListener('click', () => {
+                this.clearFeedback();
+                this.nextNumber();
+            });
+
+            // Insert after the #dropArea element if present, otherwise fall back to #letters or body
+            const dropArea = document.getElementById('dropArea');
+            const letters = document.getElementById('letters');
+            if (dropArea && dropArea.parentNode) {
+                dropArea.parentNode.insertBefore(btn, dropArea.nextSibling);
+            } else if (letters && letters.parentNode) {
+                letters.parentNode.insertBefore(btn, letters.nextSibling);
+            } else {
+                document.body.appendChild(btn);
+            }
+        }
+        this.nextButton = btn;
+    }
+
+    showNextButton() {
+        if (this.nextButton) this.nextButton.style.display = 'inline-block';
+    }
+
+    hideNextButton() {
+        if (this.nextButton) this.nextButton.style.display = 'none';
+    }
+
     checkCompletion(dropBoxes) {
         const entry = this.combinator.get(this.currentNumber) || this.combinator.compose(this.currentNumber);
         if (!entry) return;
@@ -207,11 +249,9 @@ export class ThaiNumberLearning {
         });
 
         if (allFilled && userWord === correctTiles.join('')) {
-            this.showFeedback('Correct!', 'success', 1500);
-            setTimeout(() => {
-                this.nextNumber();
-                this.clearFeedback();
-            }, 700);
+            // Show success and let the user click Next round to proceed
+            this.showFeedback('Correct! Click "Next round" to continue.', 'success', 2500);
+            this.showNextButton();
         } else if (allFilled) {
             this.showFeedback('Not quite — try again.', 'error', 1500);
         }
