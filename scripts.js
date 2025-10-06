@@ -1,6 +1,8 @@
 import { ThaiNumberLearning } from './assets/ThaiNumberLearning.js';
 
 const learningModule = new ThaiNumberLearning();
+// Expose to global so inline onclick handlers in index.html can access it
+window.learningModule = learningModule;
 
 function allowDrop(ev) {
     ev.preventDefault();
@@ -8,6 +10,26 @@ function allowDrop(ev) {
 
 function drag(ev) {
     ev.dataTransfer.setData("text/plain", ev.target.id);
+}
+
+function swapNodes(a, b) {
+    // Safely swap two DOM nodes a and b even if they have different parents
+    const parentA = a.parentNode;
+    const parentB = b.parentNode;
+    if (!parentA || !parentB) return;
+    if (parentA === parentB) {
+        // If in same parent, swap by replacing in order
+        const nextA = a.nextSibling === b ? a : a.nextSibling;
+        parentA.insertBefore(b, a);
+        parentA.insertBefore(a, nextA);
+        return;
+    }
+
+    const nextA = a.nextSibling;
+    const nextB = b.nextSibling;
+
+    parentA.insertBefore(b, nextA);
+    parentB.insertBefore(a, nextB);
 }
 
 function drop(ev) {
@@ -23,17 +45,40 @@ function drop(ev) {
 
     if (!dropTarget) return; // Not a valid drop target
 
-    // Prevent dropping into a dropBox that already has a child
+    // If dropTarget already has a child and the target is a dropBox, swap the dragged element with the existing child
     if (dropTarget.classList && dropTarget.classList.contains('dropBox') && dropTarget.hasChildNodes()) {
-        return;
-    }
+        const existing = dropTarget.firstChild;
+        const parentOfDragged = letterElement.parentNode;
 
-    dropTarget.appendChild(letterElement);
-    letterElement.style.backgroundColor = '#e0e0e0';
+        if (parentOfDragged && parentOfDragged.classList && parentOfDragged.classList.contains('dropBox')) {
+            // Swap between two drop boxes safely
+            swapNodes(letterElement, existing);
+
+            // Ensure styles remain consistent after swap
+            letterElement.style.backgroundColor = '#e0e0e0';
+            existing.style.backgroundColor = '#e0e0e0';
+        } else {
+            // If dragging from letters pool into an occupied box: place dragged into box and move existing back to pool
+            dropTarget.replaceChild(letterElement, existing);
+            existing.style.backgroundColor = '#e0e0e0';
+            lettersContainer.appendChild(existing);
+            letterElement.style.backgroundColor = '#e0e0e0';
+        }
+
+    } else {
+        // Normal append for empty box or letters pool
+        dropTarget.appendChild(letterElement);
+        letterElement.style.backgroundColor = '#e0e0e0';
+    }
 
     const dropBoxes = document.querySelectorAll('.dropBox');
     learningModule.checkCompletion(dropBoxes);
 }
+
+// Expose functions used by inline attributes to global scope because this file is an ES module
+window.drag = drag;
+window.allowDrop = allowDrop;
+window.drop = drop;
 
 // Use event delegation so newly created letters and drop boxes work without re-attaching listeners
 

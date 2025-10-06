@@ -3,7 +3,6 @@ import { NumberCombinations } from './NumberCombinations.js';
 export class ThaiNumberLearning {
     constructor() {
         this.combinator = new NumberCombinations();
-        // Use available numbers from the combinator as pool (can be extended)
         const available = this.combinator.availableNumbers();
         this.currentNumber = available[Math.floor(Math.random() * available.length)];
 
@@ -26,17 +25,43 @@ export class ThaiNumberLearning {
         const audioEl = document.getElementById('oneAudio');
         if (audioEl) audioEl.src = (entry.audio && entry.audio.length) ? entry.audio[0] : '';
 
-        // Recreate drop boxes and letters for the current word
-        const word = entry.text;
-        this.ensureDropBoxes(word.length);
+        // Use explicit tiles array length for drop boxes
+        const tiles = entry.tiles || entry.text.split('');
+        this.ensureDropBoxes(tiles.length);
 
-        // Clear pool and populate with shuffled tiles (correct letters + extras)
+        // Populate letters area with correct tiles + extras
         this.populateLettersArea(true);
     }
 
     playAudio(audioId) {
-        const audioElement = document.getElementById(audioId);
-        if (audioElement) audioElement.play();
+        // Robust play: ensure the audio element points to the current number's audio (falls back to given id)
+        const entry = this.combinator.get(this.currentNumber) || this.combinator.compose(this.currentNumber);
+        const audioEl = document.getElementById(audioId) || document.querySelector('audio');
+        if (!audioEl) return;
+
+        // Prefer entry-provided audio path so UI and audio always stay in sync
+        if (entry && entry.audio && entry.audio.length) {
+            if (audioEl.src.indexOf(entry.audio[0]) === -1) {
+                audioEl.src = entry.audio[0];
+            }
+        }
+
+        try {
+            audioEl.pause();
+            audioEl.currentTime = 0;
+            // load() to ensure browser picks up changed src before play
+            audioEl.load();
+            const playPromise = audioEl.play();
+            if (playPromise && typeof playPromise.then === 'function') {
+                playPromise.catch((err) => {
+                    // Autoplay or user gesture restrictions may prevent play; show a hint
+                    console.warn('Audio play prevented:', err);
+                    this.showFeedback('Tap the Play button again to hear the sound.', 'info', 2000);
+                });
+            }
+        } catch (e) {
+            console.error('Error playing audio:', e);
+        }
     }
 
     setupFeedbackElement() {
@@ -93,7 +118,6 @@ export class ThaiNumberLearning {
     ensureDropBoxes(length) {
         const dropArea = document.getElementById('dropArea');
         if (!dropArea) return;
-        // Recreate only if different length or if empty
         const current = dropArea.querySelectorAll('.dropBox').length;
         if (current === length) return;
 
@@ -113,15 +137,15 @@ export class ThaiNumberLearning {
 
         if (!forceReset && lettersArea.querySelectorAll('.letter').length > 0) return;
 
-        // Get correct letters for current number
+        // Get correct tiles for current number
         const entry = this.combinator.get(this.currentNumber) || this.combinator.compose(this.currentNumber);
         if (!entry) return;
-        const correct = entry.text.split('');
+        const correct = entry.tiles || [entry.text];
 
         // Pool of extra letters - can be expanded or generated dynamically
         const extrasPool = ['บ','ก','ฟ','ม','ล','ค','ร','ส','ง','ต','จ','ว','ป','อ','น'];
 
-        // Build tiles array = correct letters + random extras until we have correct.length + 3
+        // Build tiles array = correct tiles + random extras until we have correct.length + 3
         const tiles = [...correct];
         while (tiles.length < correct.length + 3) {
             const r = extrasPool[Math.floor(Math.random() * extrasPool.length)];
@@ -164,7 +188,7 @@ export class ThaiNumberLearning {
     checkCompletion(dropBoxes) {
         const entry = this.combinator.get(this.currentNumber) || this.combinator.compose(this.currentNumber);
         if (!entry) return;
-        const correctWord = entry.text;
+        const correctTiles = entry.tiles || [entry.text];
         let userWord = "";
         let allFilled = true;
 
@@ -172,7 +196,7 @@ export class ThaiNumberLearning {
             if (box.hasChildNodes()) {
                 let letter = box.firstChild.textContent;
                 userWord += letter;
-                if (letter === correctWord[index]) {
+                if (letter === correctTiles[index]) {
                     box.firstChild.style.backgroundColor = '#7CFC00';
                 } else {
                     box.firstChild.style.backgroundColor = '#FF6347';
@@ -182,7 +206,7 @@ export class ThaiNumberLearning {
             }
         });
 
-        if (allFilled && userWord === correctWord) {
+        if (allFilled && userWord === correctTiles.join('')) {
             this.showFeedback('Correct!', 'success', 1500);
             setTimeout(() => {
                 this.nextNumber();
