@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learn Thai Language</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>Learn Thai - Easy Level</h1>
+    <section id="learning">
+        <div id="question">
+            <span id="number">1</span>
+            <button onclick="learningModule.playAudio('oneAudio')">Play</button>
+            <audio id="oneAudio" src="audio/one.mp3"></audio>
+        </div>
+        <div id="letters" ondrop="drop(event)" ondragover="allowDrop(event)">
+            <!-- Thai letter boxes for dragging with unique IDs -->
+            <div id="letter1" class="letter" draggable="true" ondragstart="drag(event)">ช</div>
+            <div id="letter2" class="letter" draggable="true" ondragstart="drag(event)">น</div>
+            <div id="letter3" class="letter" draggable="true" ondragstart="drag(event)">ย</div>
+            <!-- Other random letters -->
+            <div id="letter4" class="letter" draggable="true" ondragstart="drag(event)">บ</div>
+            <div id="letter5" class="letter" draggable="true" ondragstart="drag(event)">ก</div>
+            <div id="letter6" class="letter" draggable="true" ondragstart="drag(event)">ฟ</div>
+            <div id="letter7" class="letter" draggable="true" ondragstart="drag(event)">ม</div>
+            <div id="letter8" class="letter" draggable="true" ondragstart="drag(event)">ล</div>
+            <div id="letter9" class="letter" draggable="true" ondragstart="drag(event)">ค</div>
+            <div id="letter10" class="letter" draggable="true" ondragstart="drag(event)">ร</div>
+        </div>
+        <div id="dropArea">
+            <!-- Provide exact number of boxes for the word -->
+            <div class="dropBox" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+            <div class="dropBox" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+            <div class="dropBox" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+        </div>
+    </section>
+    <script type="module" src="scripts.js"></script>
+</body>
+</html>
